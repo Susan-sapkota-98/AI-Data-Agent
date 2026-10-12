@@ -6,7 +6,18 @@ from google import genai
 load_dotenv()
 
 
-def pick_llm():
+class LLMAdapter:
+    def __init__(self, generate_response):
+        self.generate_response = generate_response
+
+    def __call__(self, prompt: str) -> str:
+        return self.generate_response(prompt)
+
+    def invoke(self, prompt: str) -> str:
+        return self.generate_response(prompt)
+
+
+def pick_llm(level: str | None = None):
     provider = os.getenv("LLM_PROVIDER", "groq").lower()
 
     if provider == "groq":
@@ -39,7 +50,7 @@ def pick_llm():
             f"Unsupported LLM provider: {provider}"
         )
 
-    return generate_response
+    return LLMAdapter(generate_response)
 
 
 if __name__ == "__main__":
