@@ -58,7 +58,7 @@ class DatabaseUtil:
 
 obj = DatabaseUtil({
     "host": os.environ["host"],
-    "port": int(os.environ.get("port", "5432")),
+    "port": os.environ['port'],
     "user": os.environ["user"],
     "password": os.environ["password"],
     "database": os.environ["database"],
