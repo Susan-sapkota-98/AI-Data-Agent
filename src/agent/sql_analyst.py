@@ -55,4 +55,5 @@ def prompt_query_context(state: AgentSchema)-> AgentSchema:
     state.generated_sql_query=generated_sql_query
 
     return state
+    
 
