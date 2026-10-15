@@ -1,7 +1,9 @@
 import os
+import json
 from dotenv import load_dotenv
 from groq import Groq
 from google import genai
+from pydantic import BaseModel
 
 load_dotenv()
 
@@ -15,6 +17,21 @@ class LLMAdapter:
 
     def invoke(self, prompt: str) -> str:
         return self.generate_response(prompt)
+
+    def with_structured_output(self, schema: type[BaseModel]):
+        class StructuredOutputAdapter:
+            def invoke(self, prompt: str) -> BaseModel:
+                structured_prompt = (
+                    f"{prompt}\n\n"
+                    "Return only a JSON object matching this JSON schema. "
+                    "Do not include markdown fences or additional text.\n"
+                    f"{json.dumps(schema.model_json_schema())}"
+                )
+                response = self_generate_response(structured_prompt)
+                return schema.model_validate_json(response.strip())
+
+        self_generate_response = self.generate_response
+        return StructuredOutputAdapter()
 
 
 def pick_llm(level: str | None = None):
