@@ -150,4 +150,29 @@ sql_agent_graph.add_node(represent_final_answer,name="represent_final_answer")
 
 #Edges
 sql_agent_graph.add_edge(START,"curate_ques")
-sql_agent_graph.add_edge("curate_ques",)
+sql_agent_graph.add_edge("curate_ques","prompt_query_context")
+sql_agent_graph.add_edge("prompt_query_context","generate_sql")
+sql_agent_graph.add_edge("generate_sql","is_safe_sql")
+
+# conditional Edge Function
+def is_safe_sql_edge(state: AgentSchema) -> str:
+    is_safe=state.is_safe_sql_response
+
+    if is_safe.lower()=="yes":
+        return "execute_sql"
+    else:
+        return "canceled_sql"
+
+sql_agent_graph.add_conditional_edges("is_safe_sql",is_safe_sql_edge)
+sql_agent_graph.add_edge("canceled_sql",END)
+sql_agent_graph.add_edge("execute_sql","represent_final_answer")
+sql_agent_graph.add_edge("represent_final_answer",END)
+
+
+#compile the graph
+sql_analyst=sql_agent_graph.compile()
+
+from IPython.display import display,Image
+img=Image(sql_analyst.get_graph().draw_mermaid_png())
+with open("sql_analyst_graph.png","wb") as f:
+    f.write(img.data)
