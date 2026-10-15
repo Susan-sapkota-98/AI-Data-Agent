@@ -3,15 +3,15 @@ import sys
 from utils.llm_pick import pick_llm
 from utils.database import DatabaseUtil
 from models.schema import AgentSchema,JudgeSchema
-from langchain_core.messages import HumanMessage 
+from langchain_core.messages import AIMessage,HumanMessage 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
+from langgraph.graph import StateGraph,START,END
 #AI agent code
 
 def curate_ques(state: AgentSchema)-> AgentSchema:
     user_question=state.user_question
     llm=pick_llm("low")
-    response=llm.invoke(f"Curate the following question: {user_question}")
+    response=llm.invoke(f"Curate the following question: {user_question}").content
 
     state.curated_ques=response
     state.messages += [HumanMessage(content=f"{response}")]
@@ -54,7 +54,7 @@ def generate_sql(state:AgentSchema)-> AgentSchema:
     prompt=state.prompt_query_context
 
     llm=pick_llm("medium")
-    generated_sql_query=llm.invoke(prompt)
+    generated_sql_query=llm.invoke(prompt).content
 
     state.generated_sql_query=generated_sql_query
 
@@ -85,10 +85,11 @@ def is_safe_sql(state: AgentSchema) -> AgentSchema:
 
     return state
     
-
+#canceled SQL query node
 def canceled_sql(state:AgentSchema)->AgentSchema:
     comments=state.state.comments
     state.final_answer=f"The generated SQL query was deemed unsafe to execute. The reason provided by the judge is:{comments}. Therefore, the SQL query will not be executed."
+    state.messages += [AIMessage(content=f"{state.final_answer}")]
     return state
 
 #Execute SQL Query node
@@ -107,3 +108,46 @@ def execute_sql(state:AgentSchema)->AgentSchema:
     state.sql_query_execution_result=execute_result
 
     return state
+
+
+# Represent the final answer Node
+
+def represent_final_answer(state: AgentSchema)-> AgentSchema:
+
+    execution_result=state.sql_query_execution_result
+    curated_question=state.curated_ques
+
+    llm=pick_llm("low")
+    prompt=f"""
+    You are an SQL analyst agent. Your task is to provide a final answer to the user based on the 
+    execution result of the SQL query and the user's original question. The final answer should be
+    concise,clear,and directly address the user's query. Avoid including any SQL code or technical
+    details in the final answer. The final answer should be in a user-friendly format that is easy to understand.
+    If the execution result is empty or does not provide a clear answer to the user's question, explain this in the final answer. \n
+    Here is the execution result: {execution_result} \n
+    Here is the user's original question: {curated_question}
+
+"""
+    llm_response=llm.invoke(prompt).content
+
+    state.final_answer=llm_response
+
+    return state
+
+
+#Graph building
+
+sql_agent_graph=StateGraph(AgentSchema)
+
+#Nodes
+sql_agent_graph.add_node(curate_ques,name="curate_ques")
+sql_agent_graph.add_node(prompt_query_context,name="prompt_query_context")
+sql_agent_graph.add_node(generate_sql,name="generate_sql")
+sql_agent_graph.add_node(is_safe_sql,name="is_safe_sql")
+sql_agent_graph.add_node(canceled_sql,name="canceled_sql")
+sql_agent_graph.add_node(execute_sql,name="execute_sql")
+sql_agent_graph.add_node(represent_final_answer,name="represent_final_answer")
+
+#Edges
+sql_agent_graph.add_edge(START,"curate_ques")
+sql_agent_graph.add_edge("curate_ques",)
