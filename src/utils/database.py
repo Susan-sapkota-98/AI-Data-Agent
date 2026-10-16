@@ -15,12 +15,12 @@ class DatabaseUtil:
             self.connection=None
 
     def schema_details(self,schema_name):
+        
+        connection = self.connection
+        cursor=connection.cursor()
+
+        schema_info_context = f"Database Schema: {schema_name}\n "
         try:
-            connection = self.connection
-            cursor=connection.cursor()
-
-            schema_info_context = f"Database Schema: {schema_name}\n "
-
             cursor.execute("SELECT table_name from information_schema.tables where table_schema = %s;",(schema_name,))
             tables_list=cursor.fetchall()
 
@@ -55,7 +55,7 @@ class DatabaseUtil:
 
         return schema_info_context
 
-    def execute_query(self,query):
+    def execute_sql(self,query):
         try:
             connection=self.connection
             cursor=connection.cursor()
