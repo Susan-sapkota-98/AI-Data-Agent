@@ -21,3 +21,5 @@ class JudgeSchema(BaseModel):
     comments:str=Field(..., description="Additional comments or feedback from the judge regarding the SQL Query ")
 
 
+class ETLAgentSchema(BaseModel):
+    messages: Annotated[list,add]=Field(...,description="List of messages to be processed by the ETL agent")
