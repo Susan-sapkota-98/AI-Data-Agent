@@ -42,6 +42,25 @@ class ETLTools:
             return f"Data successfully extracted and saved to {filename}"
         except requests.exceptions.RequestException as e:
             return f"Failed to extract data: {e}"
+
+    def transform_load_context(self,file_path:str,output_folder:str,output_format:str):
+        """
+        This tool transforms the data from the specified file and loads it into the 
+        desired location (output_folder).
+
+        Args:
+            file_path(str): The path to the file containing the data to be transformed.
+            output_folder(str): The folder where the transformed data will be saved.
+            output_format(str): The format in which to sae the transformed data (csv,json,parquet)
+
+        Returns:
+            str:A message indicating the success or failure of the operation.
+        """
+        file_extension= os.path.splitext(file_path)[1].lower()
+        if file_extension == "csv":
+            df=pd.read_csv(file_path)
+            
+
 if __name__ == "__main__":
     obj=ETLTools()
     obj=ETLTools()
