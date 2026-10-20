@@ -175,10 +175,9 @@ sql_agent_graph.add_edge("canceled_sql",END)
 sql_agent_graph.add_edge("execute_sql","represent_final_answer")
 sql_agent_graph.add_edge("represent_final_answer",END)
 
-if __name__=="__main__":
-    #compile the graph
-    sql_analyst=sql_agent_graph.compile()
+sql_analyst = sql_agent_graph.compile()
 
+if __name__=="__main__":
     from IPython.display import display,Image
     img=Image(sql_analyst.get_graph().draw_mermaid_png())
     with open("sql_analyst_graph.png","wb") as f:
